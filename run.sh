@@ -172,6 +172,58 @@ EOF
         print_style "\t ssl_stapling on;\n" "info"
         print_style "\t ssl_stapling_verify on;\n" "info"
         print_style "\t ssl_trusted_certificate /path/to/root_CA_cert_plus_intermediates;\n" "info"
+
+
+        print_style "\n\nExample vhost config like this /etc/nginx/conf.d/gitea-ssl.conf:\n" "info"
+    cat <<-EOF > /etc/nginx/conf.d/gitea-ssl.conf
+server {
+    listen 80;
+    server_name ${GITEA_HOSTNAME};
+    return 301 https://${GITEA_HOSTNAME}$request_uri;
+}
+
+
+server {
+    listen 443 ssl;
+
+    ssl_certificate /path/to/signed_cert_plus_intermediates;
+    ssl_certificate_key /path/to/private_key;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:MozSSL:10m;  # approximately 40000 sessions
+    ssl_session_tickets off;
+    ssl_dhparam /etc/ssl/certs/dhparam.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers [long string of ciphers here];
+    ssl_prefer_server_ciphers off;
+    add_header Strict-Transport-Security "max-age=63072000" always;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    ssl_trusted_certificate /path/to/root_CA_cert_plus_intermediates;
+
+
+    # Domain
+    server_name ${GITEA_HOSTNAME};
+
+    #if ($time_iso8601 ~ "^(\d{4})-(\d{2})-(\d{2})") {
+    #    set $year $1;
+    #    set $month $2;
+    #    set $day $3;
+    #}
+    #access_log /var/log/http/${GITEA_HOSTNAME}/www/$year/$month/$day/access.log main;
+
+    location / {
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+        # Reverse Proxy and Proxy Cache Configuration
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Host $host;
+        proxy_pass http://localhost:3000;
+
+    }
+}
+
+EOF
     fi
 fi
 
