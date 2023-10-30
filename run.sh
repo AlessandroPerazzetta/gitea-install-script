@@ -128,11 +128,9 @@ if ask_confirm; then
 
     print_style "Configure Nginx proxy\n" "info"
     apt -y install nginx
-    cat <<-EOF > /etc/nginx/conf.d/${GITEA_HOSTNAME}.conf
+    cat <<-EOF > /etc/nginx/sites-available/${GITEA_HOSTNAME}.conf
 server {
 	listen 80;
-	listen [::]:80;
-
 	server_name ${GITEA_HOSTNAME};
 
 	root /var/www/${GITEA_HOSTNAME};
@@ -143,6 +141,7 @@ server {
 	}
 }
 EOF
+    ln -s /etc/nginx/sites-available/${GITEA_HOSTNAME}.conf /etc/nginx/sites-enabled/${GITEA_HOSTNAME}.conf
 
     mkdir -p /var/www/${GITEA_HOSTNAME};
     cat <<-EOF > /var/www/${GITEA_HOSTNAME}/index.html
@@ -180,23 +179,19 @@ EOF
         openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
         openssl dhparam -out /etc/ssl/certs/dhparam.pem 4096
         
-        print_style "\n\nAdd SSL config to Nginx vhost config like this:\n" "info"
-        print_style "\t ssl_certificate /path/to/signed_cert_plus_intermediates;\n" "info"
-        print_style "\t ssl_certificate_key /path/to/private_key;\n" "info"
-        print_style "\t ssl_session_timeout 1d;\n" "info"
-        print_style "\t ssl_session_cache shared:MozSSL:10m;  # approximately 40000 sessions\n" "info"
-        print_style "\t ssl_session_tickets off;\n" "info"
-        print_style "\t ssl_dhparam /etc/ssl/certs/dhparam.pem;\n" "info"
-        print_style "\t ssl_protocols TLSv1.2 TLSv1.3;\n" "info"
-        print_style "\t ssl_ciphers [long string of ciphers here];\n" "info"
-        print_style "\t ssl_prefer_server_ciphers off;\n" "info"
-        print_style "\t add_header Strict-Transport-Security "max-age=63072000" always;\n" "info"
-        print_style "\t ssl_stapling on;\n" "info"
-        print_style "\t ssl_stapling_verify on;\n" "info"
-        print_style "\t ssl_trusted_certificate /path/to/root_CA_cert_plus_intermediates;\n" "info"
+        print_style "\n\nAdding SSL config to Nginx vhost config like this:\n" "info"
+        print_style "\n ssl_certificate /etc/letsencrypt/live/${GITEA_HOSTNAME}/fullchain.pem;\n" "info"
+        print_style "\n ssl_certificate_key /etc/letsencrypt/live/${GITEA_HOSTNAME}/privkey.pem;\n" "info"
+        print_style "\n include /etc/letsencrypt/options-ssl-nginx.conf;\n" "info"
+        print_style "\n ssl_session_cache shared:MozSSL:10m;  # approximately 40000 sessions\n" "info"
+        print_style "\n ssl_dhparam /etc/ssl/certs/dhparam.pem;\n" "info"
+        print_style "\n add_header Strict-Transport-Security "max-age=31536000" always;\n" "info"
+        print_style "\n ssl_stapling on;\n" "info"
+        print_style "\n ssl_stapling_verify on;\n" "info"
+        print_style "\n ssl_trusted_certificate /etc/letsencrypt/live/${GITEA_HOSTNAME}/chain.pem;\n" "info"
 
-        print_style "\n\nExample vhost config like this /etc/nginx/conf.d/gitea-ssl.conf:\n" "info"
-        cat <<-EOF > /etc/nginx/conf.d/${GITEA_HOSTNAME}-ssl.conf
+        print_style "\n\nExample vhost config like this /etc/nginx/sites-available/${GITEA_HOSTNAME}-ssl.conf:\n" "info"
+        cat <<-EOF > /etc/nginx/sites-available/${GITEA_HOSTNAME}-ssl.conf
 server {
     listen 80;
     server_name ${GITEA_HOSTNAME};
@@ -205,28 +200,24 @@ server {
 server {
     listen 443 ssl;
 
-    ssl_certificate /path/to/signed_cert_plus_intermediates;
-    ssl_certificate_key /path/to/private_key;
-    ssl_session_timeout 1d;
+    ssl_certificate /etc/letsencrypt/live/${GITEA_HOSTNAME}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${GITEA_HOSTNAME}/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_session_cache shared:MozSSL:10m;  # approximately 40000 sessions
-    ssl_session_tickets off;
     ssl_dhparam /etc/ssl/certs/dhparam.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers [long string of ciphers here];
-    ssl_prefer_server_ciphers off;
-    add_header Strict-Transport-Security "max-age=63072000" always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
     ssl_stapling on;
     ssl_stapling_verify on;
-    ssl_trusted_certificate /path/to/root_CA_cert_plus_intermediates;
+    ssl_trusted_certificate /etc/letsencrypt/live/${GITEA_HOSTNAME}/chain.pem;
 
 
     # Domain
     server_name ${GITEA_HOSTNAME};
 
-    #if ($time_iso8601 ~ "^(\d{4})-(\d{2})-(\d{2})") {
-    #    set $year $1;
-    #    set $month $2;
-    #    set $day $3;
+    #if (\$time_iso8601 ~ "^(\d{4})-(\d{2})-(\d{2})") {
+    #    set \$year \$1;
+    #    set \$month \$2;
+    #    set \$day \$3;
     #}
     #access_log /var/log/http/${GITEA_HOSTNAME}/www/$year/$month/$day/access.log main;
 
@@ -234,16 +225,20 @@ server {
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
         # Reverse Proxy and Proxy Cache Configuration
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$remote_addr;
+        proxy_set_header Host \$host;
         proxy_pass http://localhost:3000;
-
     }
 }
 EOF
+        rm -rf /etc/nginx/sites-enabled/${GITEA_HOSTNAME}.conf
+        ln -s /etc/nginx/sites-available/${GITEA_HOSTNAME}-ssl.conf /etc/nginx/sites-enabled/${GITEA_HOSTNAME}-ssl.conf
     else
-        cat <<-EOF > /etc/nginx/conf.d/${GITEA_HOSTNAME}.conf
+        if [ -f /etc/nginx/sites-available/${GITEA_HOSTNAME}.conf ]; then
+            mv /etc/nginx/sites-available/${GITEA_HOSTNAME}.conf /etc/nginx/sites-available/${GITEA_HOSTNAME}.conf.REM
+        fi
+        cat <<-EOF > /etc/nginx/sites-available/${GITEA_HOSTNAME}.conf
 server {
     listen 80;
     server_name ${GITEA_HOSTNAME};
