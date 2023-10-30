@@ -167,9 +167,9 @@ EOF
         read CERTBOT_MAIL
 
         print_style "Install letsencrypt certs for Gitea\n" "info"
-        apt install certbot python3-certbot-nginx
+        apt -y install certbot python3-certbot-nginx
 
-        certbot --nginx --agree-tos --redirect --hsts --staple-ocsp --email ${CERTBOT_MAIL} -d ${GITEA_HOSTNAME}
+        certbot --nginx --agree-tos --no-eff-email --redirect --hsts --staple-ocsp --email ${CERTBOT_MAIL} -d ${GITEA_HOSTNAME}
 
         crontab -l > root_cron
         echo "30 2 * * * /usr/bin/certbot renew --quiet" >> root_cron
