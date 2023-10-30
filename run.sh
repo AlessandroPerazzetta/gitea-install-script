@@ -48,7 +48,8 @@ function ask_confirm() {
 
 is_root
 
-print_style "Update System and Install git" "info"
+clear
+print_style "Update System and Install git\n" "info"
 apt -y update
 apt -y install git vim bash-completion curl wget
 
