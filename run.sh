@@ -128,16 +128,38 @@ if ask_confirm; then
 
     print_style "Configure Nginx proxy\n" "info"
     apt -y install nginx
-    cat <<-EOF > /etc/nginx/conf.d/gitea.conf
+    cat <<-EOF > /etc/nginx/conf.d/${GITEA_HOSTNAME}.conf
 server {
-    listen 80;
-    server_name ${GITEA_HOSTNAME};
+	listen 80;
+	listen [::]:80;
 
-    location / {
-        proxy_pass http://localhost:3000;
-    }
+	server_name ${GITEA_HOSTNAME};
+
+	root /var/www/${GITEA_HOSTNAME};
+	index index.html;
+
+	location / {
+		try_files $uri $uri/ =404;
+	}
 }
 EOF
+
+    mkdir -p /var/www/${GITEA_HOSTNAME};
+    cat <<-EOF > /var/www/${GITEA_HOSTNAME}/index.html
+<!DOCTYPE html>
+<html>
+<head>
+<title>${GITEA_HOSTNAME}</title>
+</head>
+<body>
+
+<h1></h1>
+<p></p>
+
+</body>
+</html>
+EOF
+
     systemctl restart nginx
 
     print_style "Install Letsencrypt certs\n" "info"
@@ -173,16 +195,13 @@ EOF
         print_style "\t ssl_stapling_verify on;\n" "info"
         print_style "\t ssl_trusted_certificate /path/to/root_CA_cert_plus_intermediates;\n" "info"
 
-
         print_style "\n\nExample vhost config like this /etc/nginx/conf.d/gitea-ssl.conf:\n" "info"
-    cat <<-EOF > /etc/nginx/conf.d/gitea-ssl.conf
+        cat <<-EOF > /etc/nginx/conf.d/${GITEA_HOSTNAME}-ssl.conf
 server {
     listen 80;
     server_name ${GITEA_HOSTNAME};
     return 301 https://${GITEA_HOSTNAME}$request_uri;
 }
-
-
 server {
     listen 443 ssl;
 
@@ -222,10 +241,20 @@ server {
 
     }
 }
+EOF
+    else
+        cat <<-EOF > /etc/nginx/conf.d/${GITEA_HOSTNAME}.conf
+server {
+    listen 80;
+    server_name ${GITEA_HOSTNAME};
 
+    location / {
+        proxy_pass http://localhost:3000;
+    }
+}
 EOF
     fi
 fi
 
 print_style "\nGitea installation finished\n" "success"
-print_style "Access Gitea web interface on http[s]://${GITEA_HOSTNAME} and finish configuration" "info"
+print_style "Access Gitea web interface on http[s]://${GITEA_HOSTNAME} and finish configuration\n\n" "info"
