@@ -159,6 +159,7 @@ EOF
 </html>
 EOF
 
+    rm -rf /etc/nginx/sites-enabled/default
     systemctl restart nginx
 
     print_style "Install Letsencrypt certs\n" "info"
