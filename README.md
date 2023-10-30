@@ -15,4 +15,4 @@ This script automatically update and install Gitea (binary from site), MariaDB, 
 
 # Usage:
 
-`wget -O - https://raw.githubusercontent.com/AlessandroPerazzetta/gitea-install-script/main/run.sh | bash`
+`bash <(wget -qO- https://raw.githubusercontent.com/AlessandroPerazzetta/gitea-install-script/main/run.sh)`
