@@ -66,15 +66,17 @@ adduser \
 print_style "Install MariaDB database server\n" "info"
 if ask_confirm; then
     apt -y install mariadb-server
+
+    print_style "MariaDB secure installation\n" "info"
     mysql_secure_installation
 
 
-    print_style "\nInsert gitea database password:\n" "danger"
+    print_style "\nInsert gitea database password: " "danger"
     read GITEA_DB_PWD
 
-    mysql -u root -p -e "CREATE DATABASE gitea;"
-    mysql -u root -p -e "GRANT ALL PRIVILEGES ON gitea.* TO 'gitea'@'localhost' IDENTIFIED BY '${GITEA_DB_PWD}';"
-    mysql -u root -p -e "FLUSH PRIVILEGES;"
+    mysql -e "CREATE DATABASE gitea;"
+    mysql -e "GRANT ALL PRIVILEGES ON gitea.* TO 'gitea'@'localhost' IDENTIFIED BY '${GITEA_DB_PWD}';"
+    mysql -e "FLUSH PRIVILEGES;"
 fi
 
 print_style "Install Gitea\n" "info"
@@ -121,7 +123,7 @@ systemctl status gitea
 
 print_style "Install Nginx\n" "info"
 if ask_confirm; then
-    print_style "\nInsert gitea hostname:\n" "danger"
+    print_style "\nInsert gitea hostname: " "danger"
     read GITEA_HOSTNAME
 
     print_style "Configure Nginx proxy\n" "info"
