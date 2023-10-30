@@ -10,9 +10,14 @@ Gitead installation script (deb based)
 
 This script automatically update and install Gitea (binary from site), MariaDB, Nginx and Letsencrypt
 
-
-
-
 # Usage:
 
+Run as root:
+
 `bash <(wget -qO- https://raw.githubusercontent.com/AlessandroPerazzetta/gitea-install-script/main/run.sh)`
+
+
+
+Run as sudo user:
+
+`sudo su -c "bash <(wget -qO- https://raw.githubusercontent.com/AlessandroPerazzetta/gitea-install-script/main/run.sh)" root`
