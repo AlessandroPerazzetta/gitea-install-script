@@ -53,7 +53,7 @@ print_style "Update System and Install git\n" "info"
 apt -y update
 apt -y install git vim bash-completion curl wget
 
-print_style "Add git user account for Gitea" "info"
+print_style "Add git user account for Gitea\n" "info"
 adduser \
    --system \
    --shell /bin/bash \
@@ -63,13 +63,13 @@ adduser \
    --home /home/git \
    git
 
-print_style "Install MariaDB database server" "info"
+print_style "Install MariaDB database server\n" "info"
 if ask_confirm; then
     apt -y install mariadb-server
     mysql_secure_installation
 
 
-    print_style "Insert gitea database password: " "danger"
+    print_style "\nInsert gitea database password:\n" "danger"
     read GITEA_DB_PWD
 
     mysql -u root -p -e "CREATE DATABASE gitea;"
@@ -77,7 +77,7 @@ if ask_confirm; then
     mysql -u root -p -e "FLUSH PRIVILEGES;"
 fi
 
-print_style "Install Gitea" "info"
+print_style "Install Gitea\n" "info"
 cd /tmp/
 curl -s  https://api.github.com/repos/go-gitea/gitea/releases/latest |grep browser_download_url  |  cut -d '"' -f 4  | grep '\linux-amd64$' | wget -i -
 chmod +x gitea-*-linux-amd64
@@ -91,7 +91,7 @@ chmod 750 /var/lib/gitea/{data,indexers,log}
 chown root:git /etc/gitea
 chmod 770 /etc/gitea
 
-print_style "Configure Systemd for Gitea" "info"
+print_style "Configure Systemd for Gitea\n" "info"
 cat <<-EOF > /etc/systemd/system/gitea.service
 [Unit]
 Description=Gitea (Git with a cup of tea)
@@ -119,12 +119,12 @@ systemctl daemon-reload
 systemctl enable --now gitea
 systemctl status gitea
 
-print_style "Install Nginx" "info"
+print_style "Install Nginx\n" "info"
 if ask_confirm; then
-    print_style "Insert gitea hostname: " "danger"
+    print_style "\nInsert gitea hostname:\n" "danger"
     read GITEA_HOSTNAME
 
-    print_style "Configure Nginx proxy" "info"
+    print_style "Configure Nginx proxy\n" "info"
     apt -y install nginx
     cat <<-EOF > /etc/nginx/conf.d/gitea.conf
 server {
@@ -138,12 +138,12 @@ server {
 EOF
     systemctl restart nginx
 
-    print_style "Install Letsencrypt certs" "info"
+    print_style "Install Letsencrypt certs\n" "info"
     if ask_confirm; then
         print_style "Insert email for certs notifications: " "danger"
         read CERTBOT_MAIL
 
-        print_style "Install letsencrypt certs for Gitea" "info"
+        print_style "Install letsencrypt certs for Gitea\n" "info"
         apt install certbot python3-certbot-nginx
 
         certbot --nginx --agree-tos --redirect --hsts --staple-ocsp --email ${CERTBOT_MAIL} -d ${GITEA_HOSTNAME}
@@ -156,22 +156,22 @@ EOF
         openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
         openssl dhparam -out /etc/ssl/certs/dhparam.pem 4096
         
-        print_style "Add SSL config to Nginx vhost config like this: " "info"
-        print_style "\t ssl_certificate /path/to/signed_cert_plus_intermediates;" "info"
-        print_style "\t ssl_certificate_key /path/to/private_key;" "info"
-        print_style "\t ssl_session_timeout 1d;" "info"
-        print_style "\t ssl_session_cache shared:MozSSL:10m;  # approximately 40000 sessions" "info"
-        print_style "\t ssl_session_tickets off;" "info"
-        print_style "\t ssl_dhparam /etc/ssl/certs/dhparam.pem;" "info"
-        print_style "\t ssl_protocols TLSv1.2 TLSv1.3;" "info"
-        print_style "\t ssl_ciphers [long string of ciphers here];" "info"
-        print_style "\t ssl_prefer_server_ciphers off;" "info"
-        print_style "\t add_header Strict-Transport-Security "max-age=63072000" always;" "info"
-        print_style "\t ssl_stapling on;" "info"
-        print_style "\t ssl_stapling_verify on;" "info"
-        print_style "\t ssl_trusted_certificate /path/to/root_CA_cert_plus_intermediates;" "info"
+        print_style "\n\nAdd SSL config to Nginx vhost config like this:\n" "info"
+        print_style "\t ssl_certificate /path/to/signed_cert_plus_intermediates;\n" "info"
+        print_style "\t ssl_certificate_key /path/to/private_key;\n" "info"
+        print_style "\t ssl_session_timeout 1d;\n" "info"
+        print_style "\t ssl_session_cache shared:MozSSL:10m;  # approximately 40000 sessions\n" "info"
+        print_style "\t ssl_session_tickets off;\n" "info"
+        print_style "\t ssl_dhparam /etc/ssl/certs/dhparam.pem;\n" "info"
+        print_style "\t ssl_protocols TLSv1.2 TLSv1.3;\n" "info"
+        print_style "\t ssl_ciphers [long string of ciphers here];\n" "info"
+        print_style "\t ssl_prefer_server_ciphers off;\n" "info"
+        print_style "\t add_header Strict-Transport-Security "max-age=63072000" always;\n" "info"
+        print_style "\t ssl_stapling on;\n" "info"
+        print_style "\t ssl_stapling_verify on;\n" "info"
+        print_style "\t ssl_trusted_certificate /path/to/root_CA_cert_plus_intermediates;\n" "info"
     fi
 fi
 
-print_style "Gitea installation finished" "success"
+print_style "\nGitea installation finished\n" "success"
 print_style "Access Gitea web interface on http[s]://${GITEA_HOSTNAME} and finish configuration" "info"
