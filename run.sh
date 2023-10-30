@@ -137,7 +137,7 @@ server {
 	index index.html;
 
 	location / {
-		try_files $uri $uri/ =404;
+		try_files \$uri \$uri/ =404;
 	}
 }
 EOF
@@ -195,7 +195,7 @@ EOF
 server {
     listen 80;
     server_name ${GITEA_HOSTNAME};
-    return 301 https://${GITEA_HOSTNAME}$request_uri;
+    return 301 https://${GITEA_HOSTNAME}\$request_uri;
 }
 server {
     listen 443 ssl;
@@ -219,7 +219,7 @@ server {
     #    set \$month \$2;
     #    set \$day \$3;
     #}
-    #access_log /var/log/http/${GITEA_HOSTNAME}/www/$year/$month/$day/access.log main;
+    #access_log /var/log/http/${GITEA_HOSTNAME}/www/\$year/\$month/\$day/access.log main;
 
     location / {
         add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
